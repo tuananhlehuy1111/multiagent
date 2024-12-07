@@ -365,15 +365,15 @@ def betterEvaluationFunction(currentGameState: GameState):
     newFood = currentGameState.getFood().asList()  # Danh sách thức ăn
 
     # Tính khoảng cách Manhattan đến thức ăn gần nhất
-    minFoodDist = float('inf')
+    foodDistance = float('inf')
     for food in newFood:
-        minFoodDist = min(minFoodDist, manhattanDistance(newPos, food))
+        foodDistance = min(foodDistance, manhattanDistance(newPos, food))
 
     # Tính điểm phạt dựa trên khoảng cách đến các con ma
-    ghostPenalty = 0
+    penalty = 0
     for ghost in currentGameState.getGhostPositions():
-        ghostPenalty = manhattanDistance(newPos, ghost)
-        if ghostPenalty < 2:  # Nếu Pacman quá gần ma
+        penalty = manhattanDistance(newPos, ghost)
+        if penalty < 2:  # Nếu Pacman quá gần ma
             return -float('inf')  # Phạt nặng khi va chạm với ma
 
     # Lấy số lượng thức ăn và viên thuốc còn lại
@@ -395,8 +395,8 @@ def betterEvaluationFunction(currentGameState: GameState):
     # Tính tổng điểm để đánh giá trạng thái
     return (
             1.0 / (foodLeft + 1) * foodLeftScore  # Điểm cao hơn khi còn ít thức ăn
-            + ghostPenalty  # Điểm phạt từ khoảng cách đến ma
-            + 1.0 / (minFoodDist + 1) * foodDistScore  # Điểm cao hơn khi gần thức ăn
+            + penalty  # Điểm phạt từ khoảng cách đến ma
+            + 1.0 / (foodDistance + 1) * foodDistScore  # Điểm cao hơn khi gần thức ăn
             + 1.0 / (capsLeft + 1) * capsLeftScore  # Điểm cao hơn khi còn ít viên thuốc
             + additionalScore  # Điểm thưởng/phạt khi thắng hoặc thua
     )
