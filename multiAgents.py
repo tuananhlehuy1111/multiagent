@@ -75,45 +75,51 @@ class ReflexAgent(Agent):
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** YOUR CODE HERE ***"
+
         def distanceToNearestFood():
             """
-            Calculates the Manhattan distance to the nearest food.
+            Tính khoảng cách đến thức ăn gần nhất.
             """
-            foodList = newFood.asList()
-            if not foodList:  # No food left
+            foodList = newFood.asList()  # Lấy danh sách thức ăn
+            if not foodList:  # Nếu không còn thức ăn
                 return 0
+            # Tính khoảng cách ngắn nhất đến thức ăn
             return min(manhattanDistance(newPos, food) for food in foodList)
 
         def distanceFromGhosts():
             """
-            Calculates a penalty based on the Manhattan distance to active ghosts.
+            Tính điểm phạt dựa trên khoảng cách đến các ma.
             """
             penalty = 0
+            # Duyệt qua tất cả các ma
             for i, ghostState in enumerate(newGhostStates):
-                ghostPos = ghostState.getPosition()
-                dist = manhattanDistance(newPos, ghostPos)
-                if newScaredTimes[i] == 0:  # Only consider active ghosts
-                    penalty += max(0, 4 - dist) * 100  # High penalty for proximity
+                ghostPos = ghostState.getPosition()  # Vị trí của ma
+                dist = manhattanDistance(newPos, ghostPos)  # Tính khoảng cách giữa Pacman và ma
+                if newScaredTimes[i] == 0:  # Nếu ma không sợ
+                    # Nếu gần ma, cộng điểm phạt lớn
+                    penalty += max(0, 4 - dist) * 100
             return penalty
 
         if successorGameState.isWin():
-            return 99999  # High reward for winning
+            return 99999  # Điểm cao khi thắng
         if successorGameState.isLose():
-            return -99999  # High penalty for losing
+            return -99999  # Điểm thấp khi thua
 
-        # Combine distance to food and ghost penalties for evaluation
-        foodDistance = distanceToNearestFood()
-        ghostPenalty = distanceFromGhosts()
+        # Tính khoảng cách đến thức ăn và điểm phạt từ ma
+        foodDistance = distanceToNearestFood()  # Khoảng cách đến thức ăn gần nhất
+        ghostPenalty = distanceFromGhosts()  # Điểm phạt từ các ma
 
-        # Lower score for stopping
+        # Nếu dừng lại, sẽ bị phạt thêm 10 điểm
         stopPenalty = 10 if action == Directions.STOP else 0
 
+        # Trả về tổng điểm: điểm hiện tại - phạt từ ma - phạt khi dừng lại + thưởng khi gần thức ăn
         return (
-            successorGameState.getScore()
-            - ghostPenalty
-            - stopPenalty
-            + (1 / (foodDistance + 1)) * 10  # Higher score for being closer to food
+                successorGameState.getScore()  # Điểm hiện tại
+                - ghostPenalty  # Trừ điểm phạt từ ma
+                - stopPenalty  # Trừ điểm phạt khi dừng lại
+                + (1 / (foodDistance + 1)) * 10  # Cộng điểm nếu gần thức ăn
         )
+
 
 def scoreEvaluationFunction(currentGameState: GameState):
     """
@@ -175,48 +181,51 @@ class MinimaxAgent(MultiAgentSearchAgent):
         """
         "*** YOUR CODE HERE ***"
         "*** YOUR CODE HERE ***"
-        # Call the unified minimax function and get the best action
+        # Gọi hàm minimax thống nhất và lấy hành động tốt nhất
         return self.minimax(gameState, 0, 0)[1]
 
     def minimax(self, gameState, depth, agentID):
         """
-        Unified minimax function handling both max and min agents.
-        Returns a tuple of (score, action).
+        Hàm minimax thống nhất xử lý cả agent tối đa hóa (max) và tối thiểu hóa (min).
+        Trả về một tuple (score, action).
         """
-        # Check terminal state or max depth
+        # Kiểm tra trạng thái cuối cùng (game thắng/thua) hoặc độ sâu tối đa
         if depth == self.depth or gameState.isWin() or gameState.isLose():
             return self.evaluationFunction(gameState), None
 
-        legalActions = gameState.getLegalActions(agentID)
-        if not legalActions:  # No actions available
+        legalActions = gameState.getLegalActions(agentID)  # Lấy danh sách hành động hợp lệ của agent
+        if not legalActions:  # Nếu không còn hành động hợp lệ
             return self.evaluationFunction(gameState), None
 
-        # Initialize for max/min agent
-        if agentID == 0:  # Pacman's turn (maximizer)
-            value, best_action = float('-inf'), Directions.STOP
-        else:  # Ghosts' turn (minimizer)
-            value, best_action = float('inf'), None
+        # Khởi tạo giá trị ban đầu cho agent tối đa hóa (Pacman) hoặc tối thiểu hóa (Ghosts)
+        if agentID == 0:  # Lượt của agent tối đa hóa (Pacman)
+            value, best_action = float(
+                '-inf'), Directions.STOP  # Khởi tạo giá trị là âm vô cùng (tìm giá trị lớn nhất)
+        else:  # Lượt của agent tối thiểu hóa (Ghosts)
+            value, best_action = float('inf'), None  # Khởi tạo giá trị là dương vô cùng (tìm giá trị nhỏ nhất)
 
-        # Iterate over legal actions
+        # Lặp qua tất cả các hành động hợp lệ của agent
         for action in legalActions:
-            successor = gameState.generateSuccessor(agentID, action)
+            successor = gameState.generateSuccessor(agentID,
+                                                    action)  # Tạo trạng thái tiếp theo sau khi thực hiện hành động
 
-            # Determine the next agent and depth
-            nextAgent = (agentID + 1) % gameState.getNumAgents()
-            nextDepth = depth + 1 if nextAgent == 0 else depth
+            # Xác định agent tiếp theo và độ sâu tiếp theo
+            nextAgent = (agentID + 1) % gameState.getNumAgents()  # Tính agent tiếp theo
+            nextDepth = depth + 1 if nextAgent == 0 else depth  # Tăng độ sâu khi quay lại lượt của agent tối đa hóa (Pacman)
 
-            # Recursive minimax call
-            successor_value = self.minimax(successor, nextDepth, nextAgent)[0]
+            # Gọi đệ quy minimax để tính giá trị của trạng thái tiếp theo
+            successor_value = self.minimax(successor, nextDepth, nextAgent)[
+                0]  # Lấy giá trị từ trạng thái tiếp theo
 
-            # Update value and best action based on agent type
-            if agentID == 0:  # Maximizer
+            # Cập nhật giá trị và hành động tốt nhất dựa trên kiểu agent (tối đa hóa hoặc tối thiểu hóa)
+            if agentID == 0:  # Lượt của agent tối đa hóa (Pacman)
                 if successor_value > value:
-                    value, best_action = successor_value, action
-            else:  # Minimizer
+                    value, best_action = successor_value, action  # Cập nhật giá trị và hành động tốt nhất nếu tìm được giá trị lớn hơn
+            else:  # Lượt của agent tối thiểu hóa (Ghosts)
                 if successor_value < value:
-                    value, best_action = successor_value, action
+                    value, best_action = successor_value, action  # Cập nhật giá trị và hành động tốt nhất nếu tìm được giá trị nhỏ hơn
 
-        return value, best_action
+        return value, best_action  # Trả về giá trị và hành động tốt nhất
 
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
@@ -231,47 +240,60 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         "*** YOUR CODE HERE ***"
 
         def alphaBetaPruning(gameState, depth, agentID, alpha, beta):
+            # Dừng lại khi đạt độ sâu tối đa hoặc game kết thúc (thắng/thua)
             if depth == self.depth or gameState.isWin() or gameState.isLose():
                 return self.evaluationFunction(gameState)
 
-            legalActions = gameState.getLegalActions(agentID)
-            if not legalActions:  # No legal actions
+            legalActions = gameState.getLegalActions(agentID)  # Lấy danh sách hành động hợp lệ của agent
+            if not legalActions:  # Nếu không còn hành động hợp lệ
                 return self.evaluationFunction(gameState)
 
-            if agentID == 0:  # Maximizing agent
-                value = float('-inf')
-                bestAction = Directions.STOP
+            if agentID == 0:  # Lượt của agent tối đa hóa (Maximizing agent)
+                value = float('-inf')  # Khởi tạo giá trị là âm vô cùng (tìm giá trị lớn nhất)
+                bestAction = Directions.STOP  # Khởi tạo hành động tốt nhất là dừng lại (STOP)
+
+                # Lặp qua tất cả các hành động hợp lệ và chọn hành động có giá trị lớn nhất
                 for action in legalActions:
+                    # Tính giá trị của trạng thái tiếp theo sau khi thực hiện hành động
                     successorValue = alphaBetaPruning(
                         gameState.generateSuccessor(agentID, action), depth, 1, alpha, beta
                     )
+                    # Cập nhật giá trị và hành động tốt nhất nếu tìm được giá trị lớn hơn
                     if successorValue > value:
                         value = successorValue
                         bestAction = action
+                    # Cắt tỉa nhánh nếu giá trị của agent đã lớn hơn beta
                     if value > beta:
                         return value
+                    # Cập nhật alpha với giá trị lớn nhất giữa alpha và value
                     alpha = max(alpha, value)
 
+                # Nếu đang ở độ sâu 0 (lúc này là lượt của agent tối đa hóa), trả về hành động tốt nhất
                 return bestAction if depth == 0 else value
 
-            else:  # Minimizing agent
-                value = float('inf')
-                nextAgent = (agentID + 1) % gameState.getNumAgents()
-                nextDepth = depth + 1 if nextAgent == 0 else depth
+            else:  # Lượt của agent tối thiểu hóa (Minimizing agent)
+                value = float('inf')  # Khởi tạo giá trị là dương vô cùng (tìm giá trị nhỏ nhất)
+                nextAgent = (agentID + 1) % gameState.getNumAgents()  # Chuyển sang agent tiếp theo
+                nextDepth = depth + 1 if nextAgent == 0 else depth  # Nếu quay lại lượt của agent tối đa hóa, tăng độ sâu
 
+                # Lặp qua tất cả các hành động hợp lệ của agent tối thiểu hóa
                 for action in legalActions:
+                    # Tính giá trị của trạng thái tiếp theo sau khi thực hiện hành động
                     successorValue = alphaBetaPruning(
                         gameState.generateSuccessor(agentID, action), nextDepth, nextAgent, alpha, beta
                     )
+                    # Cập nhật giá trị nếu tìm được giá trị nhỏ hơn
                     value = min(value, successorValue)
+                    # Cắt tỉa nhánh nếu giá trị của agent đã nhỏ hơn alpha
                     if value < alpha:
                         return value
+                    # Cập nhật beta với giá trị nhỏ nhất giữa beta và value
                     beta = min(beta, value)
 
                 return value
 
+        # Gọi hàm alphaBetaPruning bắt đầu từ độ sâu 0 và agentID 0 (lượt của agent tối đa hóa)
         return alphaBetaPruning(gameState, 0, 0, float('-inf'), float('inf'))
-
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
@@ -289,30 +311,42 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         "*** YOUR CODE HERE ***"
 
         def expectiMax(gameState, depth, agentID):
+            # Dừng lại khi đạt độ sâu tối đa hoặc game kết thúc (thắng/thua)
             if depth == self.depth or gameState.isWin() or gameState.isLose():
                 return self.evaluationFunction(gameState)
 
-            legalActions = gameState.getLegalActions(agentID)  # Cache legal actions
-            if not legalActions:  # No actions available
+            legalActions = gameState.getLegalActions(agentID)  # Lấy danh sách hành động hợp lệ của agent
+            if not legalActions:  # Nếu không còn hành động hợp lệ
                 return self.evaluationFunction(gameState)
 
-            if agentID == 0:  # Pacman's turn (Maximizer)
-                value = float('-inf')
-                bestAction = Directions.STOP
+            if agentID == 0:  # Lượt của Pacman (Maximizer)
+                value = float('-inf')  # Khởi tạo giá trị của Pacman là âm vô cùng (tìm giá trị lớn nhất)
+                bestAction = Directions.STOP  # Khởi tạo hành động tốt nhất là dừng lại (STOP)
+
+                # Lặp qua tất cả các hành động hợp lệ của Pacman và chọn hành động có giá trị tốt nhất
                 for action in legalActions:
+                    # Tính giá trị của trạng thái tiếp theo sau khi thực hiện hành động
                     successorValue = expectiMax(gameState.generateSuccessor(agentID, action), depth, 1)
+                    # Cập nhật giá trị và hành động tốt nhất nếu tìm được giá trị lớn hơn
                     if successorValue > value:
                         value = successorValue
                         bestAction = action
-                return bestAction if depth == 0 else value
-            else:  # Ghosts' turn (Expectimax)
-                nextAgent = (agentID + 1) % gameState.getNumAgents()
-                nextDepth = depth + 1 if nextAgent == 0 else depth
 
+                # Nếu đang ở độ sâu 0 (lúc này là lượt của Pacman), trả về hành động tốt nhất
+                return bestAction if depth == 0 else value
+
+            else:  # Lượt của các ma (Expectimax)
+                nextAgent = (agentID + 1) % gameState.getNumAgents()  # Chuyển sang agent tiếp theo (ma kế tiếp)
+                nextDepth = depth + 1 if nextAgent == 0 else depth  # Nếu quay lại lượt của Pacman, tăng độ sâu
+
+                # Xác suất mỗi hành động được chọn (giả định xác suất bằng nhau cho mỗi hành động)
                 probability = 1 / len(legalActions)
+
+                # Tính tổng giá trị kỳ vọng của các hành động, nhân với xác suất của mỗi hành động
                 return sum(probability * expectiMax(gameState.generateSuccessor(agentID, action), nextDepth, nextAgent)
                            for action in legalActions)
 
+        # Gọi hàm expectiMax bắt đầu từ độ sâu 0 và agentID 0 (Pacman)
         return expectiMax(gameState, 0, 0)
 
 
@@ -326,50 +360,46 @@ def betterEvaluationFunction(currentGameState: GameState):
     and proximity to ghosts. It prioritizes escaping ghosts if they are too close.
     """
     "*** YOUR CODE HERE ***"
+    # Lấy thông tin cần thiết từ GameState
+    newPos = currentGameState.getPacmanPosition()  # Vị trí hiện tại của Pacman
+    newFood = currentGameState.getFood().asList()  # Danh sách thức ăn
 
-    # Setup information to be used as arguments in evaluation function
-    pacman_position = currentGameState.getPacmanPosition()
-    ghost_positions = currentGameState.getGhostPositions()
+    # Tính khoảng cách Manhattan đến thức ăn gần nhất
+    minFoodDist = float('inf')
+    for food in newFood:
+        minFoodDist = min(minFoodDist, manhattanDistance(newPos, food))
 
-    food_list = currentGameState.getFood().asList()
-    food_count = len(food_list)
-    capsule_count = len(currentGameState.getCapsules())
-    game_score = currentGameState.getScore()
+    # Tính điểm phạt dựa trên khoảng cách đến các con ma
+    ghostPenalty = 0
+    for ghost in currentGameState.getGhostPositions():
+        ghostPenalty = manhattanDistance(newPos, ghost)
+        if ghostPenalty < 2:  # Nếu Pacman quá gần ma
+            return -float('inf')  # Phạt nặng khi va chạm với ma
 
-    # Initialize closest food distance to a large value
-    closest_food = float('inf') if food_count > 0 else 1
+    # Lấy số lượng thức ăn và viên thuốc còn lại
+    foodLeft = currentGameState.getNumFood()
+    capsLeft = len(currentGameState.getCapsules())
 
-    # Combine calculation of food and ghost distances to avoid unnecessary iterations
-    for food_position in food_list:
-        # Update the closest food distance
-        food_distance = manhattanDistance(pacman_position, food_position)
-        if food_distance < closest_food:
-            closest_food = food_distance
+    # Thiết lập các hệ số tính điểm
+    foodLeftScore = 1000000  # Điểm cao khi ít thức ăn
+    capsLeftScore = 10000  # Điểm cao khi còn viên thuốc
+    foodDistScore = 500  # Điểm cao khi gần thức ăn
 
-    # Check ghost proximity and prioritize escaping if necessary
-    for ghost_position in ghost_positions:
-        ghost_distance = manhattanDistance(pacman_position, ghost_position)
-        if ghost_distance < 2:
-            closest_food = 99999  # Override food distance to prioritize escaping
-            break  # No need to check further once escape is prioritized
+    # Thêm các yếu tố điểm thưởng/phạt khi thắng hoặc thua
+    additionalScore = 0
+    if currentGameState.isLose():  # Nếu thua
+        additionalScore -= 100000  # Điểm phạt khi thua
+    elif currentGameState.isWin():  # Nếu thắng
+        additionalScore += 100000  # Điểm thưởng khi thắng
 
-    features = [
-        1.0 / closest_food,
-        game_score,
-        food_count,
-        capsule_count
-    ]
-
-    weights = [
-        10,
-        200,
-        -100,
-        -10
-    ]
-
-    # Linear combination of features
-    return sum(feature * weight for feature, weight in zip(features, weights))
-
+    # Tính tổng điểm để đánh giá trạng thái
+    return (
+            1.0 / (foodLeft + 1) * foodLeftScore  # Điểm cao hơn khi còn ít thức ăn
+            + ghostPenalty  # Điểm phạt từ khoảng cách đến ma
+            + 1.0 / (minFoodDist + 1) * foodDistScore  # Điểm cao hơn khi gần thức ăn
+            + 1.0 / (capsLeft + 1) * capsLeftScore  # Điểm cao hơn khi còn ít viên thuốc
+            + additionalScore  # Điểm thưởng/phạt khi thắng hoặc thua
+    )
 
 # Abbreviation
 better = betterEvaluationFunction
