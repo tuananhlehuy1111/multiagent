@@ -194,7 +194,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
     def minimax(self, gameState, depth, agentID):
         """
         Hàm minimax thống nhất xử lý cả agent tối đa hóa (max) và tối thiểu hóa (min).
-        Trả về một tuple (score, action).
+        Trả về một tuple (score, ac tion).
         """
         # Kiểm tra trạng thái cuối cùng (game thắng/thua) hoặc độ sâu tối đa
         if depth == self.depth or gameState.isWin() or gameState.isLose():
@@ -362,9 +362,19 @@ def betterEvaluationFunction(currentGameState: GameState):
     Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
     evaluation function (question 5).
 
-    DESCRIPTION: This evaluation function considers the distance to the nearest food,
-    the current game score, the number of remaining foods, the number of remaining capsules,
-    and proximity to ghosts. It prioritizes escaping ghosts if they are too close.
+    DESCRIPTION: This evaluation function considers the following factors to determine
+    the desirability of a game state:
+    - The distance to the nearest food.
+    - The number of remaining food items and capsules.
+    - The proximity to ghosts.
+    - The current game score.
+    - A penalty for losing or a bonus for winning.
+
+    The evaluation function rewards Pacman for being close to food, eating food, and
+    collecting power capsules. It penalizes Pacman for being too close to ghosts, especially
+    when they are not scared. If Pacman is very close to a ghost, it returns an extreme penalty
+    (effectively avoiding that state). The function also provides bonuses for winning and penalties
+    for losing, helping the agent to prioritize achieving the game objective (winning) over other factors.
     """
     "*** YOUR CODE HERE ***"
     # Useful information you can extract from a GameState (pacman.py)
