@@ -80,44 +80,51 @@ class ReflexAgent(Agent):
             """
             Tính khoảng cách đến thức ăn gần nhất.
             """
-            foodList = newFood.asList()  # Lấy danh sách thức ăn
+            foodList = newFood.asList()  # Danh sách tất cả các vị trí thức ăn
             if not foodList:  # Nếu không còn thức ăn
                 return 0
-            # Tính khoảng cách ngắn nhất đến thức ăn
+            # Tìm khoảng cách tối thiểu đến bất kỳ thức ăn nào
             return min(manhattanDistance(newPos, food) for food in foodList)
 
         def distanceFromGhosts():
             """
-            Tính điểm phạt dựa trên khoảng cách đến các ma.
+            Tính điểm phạt dựa trên khoảng cách đến các con ma.
             """
             penalty = 0
-            # Duyệt qua tất cả các ma
+            # Lặp qua tất cả các trạng thái của ma
             for i, ghostState in enumerate(newGhostStates):
-                ghostPos = ghostState.getPosition()  # Vị trí của ma
-                dist = manhattanDistance(newPos, ghostPos)  # Tính khoảng cách giữa Pacman và ma
-                if newScaredTimes[i] == 0:  # Nếu ma không sợ
-                    # Nếu gần ma, cộng điểm phạt lớn
-                    penalty += max(0, 4 - dist) * 100
+                ghostPos = ghostState.getPosition()  # Lấy vị trí của ma
+                dist = manhattanDistance(newPos, ghostPos)  # Khoảng cách giữa Pacman và ma
+                if newScaredTimes[i] == 0:  # Nếu ma không bị sợ
+                    # Áp dụng điểm phạt nếu gần ma
+                    if dist <= 0.7:
+                        penalty += 500  # Phạt khi va chạm với ma
+                    else:
+                        penalty += max(0, 4 - dist) * 100  # Phạt dựa trên khoảng cách
+                else:  # Nếu ma bị sợ
+                    if dist <= 0.7:
+                        penalty -= 200  # Thưởng khi ăn ma bị sợ
             return penalty
 
         if successorGameState.isWin():
-            return 99999  # Điểm cao khi thắng
+            return successorGameState.getScore() + 500  # Thưởng khi thắng
         if successorGameState.isLose():
-            return -99999  # Điểm thấp khi thua
+            return successorGameState.getScore() - 500  # Phạt khi thua
 
-        # Tính khoảng cách đến thức ăn và điểm phạt từ ma
-        foodDistance = distanceToNearestFood()  # Khoảng cách đến thức ăn gần nhất
-        ghostPenalty = distanceFromGhosts()  # Điểm phạt từ các ma
+        # Tính khoảng cách đến thức ăn gần nhất và điểm phạt từ ma
+        foodDistance = distanceToNearestFood()
+        ghostPenalty = distanceFromGhosts()
 
-        # Nếu dừng lại, sẽ bị phạt thêm 10 điểm
-        stopPenalty = 10 if action == Directions.STOP else 0
+        # Phạt thời gian nếu Pacman dừng lại
+        TIME_PENALTY = 1 if action == Directions.STOP else 0
 
-        # Trả về tổng điểm: điểm hiện tại - phạt từ ma - phạt khi dừng lại + thưởng khi gần thức ăn
+        # Tính điểm theo các quy tắc của Pacman (pacman.py)
         return (
-                successorGameState.getScore()  # Điểm hiện tại
+                successorGameState.getScore()  # Điểm cơ bản
                 - ghostPenalty  # Trừ điểm phạt từ ma
-                - stopPenalty  # Trừ điểm phạt khi dừng lại
-                + (1 / (foodDistance + 1)) * 10  # Cộng điểm nếu gần thức ăn
+                - TIME_PENALTY  # Trừ điểm phạt thời gian
+                + (10 if foodDistance == 0 else 0)  # Thưởng khi ăn thức ăn
+                + (1 / (foodDistance + 1)) * 10  # Thưởng khi gần thức ăn
         )
 
 
@@ -360,7 +367,7 @@ def betterEvaluationFunction(currentGameState: GameState):
     and proximity to ghosts. It prioritizes escaping ghosts if they are too close.
     """
     "*** YOUR CODE HERE ***"
-    # Lấy thông tin cần thiết từ GameState
+    # Useful information you can extract from a GameState (pacman.py)
     newPos = currentGameState.getPacmanPosition()  # Vị trí hiện tại của Pacman
     newFood = currentGameState.getFood().asList()  # Danh sách thức ăn
 
